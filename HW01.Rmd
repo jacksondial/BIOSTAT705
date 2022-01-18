@@ -1,0 +1,37 @@
+---
+title: "HW01"
+author: "Jackson Dial"
+date: "1/18/2022"
+output: word_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Question 1
+
+### Part i
+
+```{r}
+salt <- read.csv("../HW01Data/saltBP.csv")
+
+```
+
+### Part ii
+
+```{r}
+fit <- lm(BP ~ salt, data = salt)
+summary(fit)
+```
+
+### Part iii
+
+```{r}
+fit$coefficients[1]
+fit$coefficients[2]
+```
+
+
