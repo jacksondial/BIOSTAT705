@@ -11,20 +11,41 @@ editor_options:
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+```{r}
+library(tidyverse)
+library(pander)
+```
+
 # Question 1
 
 ### Part i
 
 ```{r}
-salt <- read.csv("../HW01Data/saltBP.csv")
+dat <- read.csv("../HW01Data/saltBP.csv")
+
+fit <- lm(BP ~ salt, data = dat)
+
+ybar <- mean(dat$BP)
+yhats <- predict(fit)
+#(yhat - ybar)(y - ybar)
+yi <- dat[,1]
+sum((yhats - ybar)*(yi - yhats))
 
 ```
 
 ### Part ii
 
 ```{r}
-fit <- lm(BP ~ salt, data = salt)
-summary(fit)
+x <- model.matrix(fit)
+x
+#
+dim(x)
+# get the response vector, y
+y=dat[,1]
+y
+# get matrix x transpose x
+xTx <- t(x) %*% x
+xTx
 ```
 
 ### Part iii
@@ -33,5 +54,209 @@ summary(fit)
 fit$coefficients[1]
 fit$coefficients[2]
 ```
+
+### Part iv
+
+```{r}
+mse <- mean(fit$residuals^2)
+mse
+```
+
+### Part v
+
+```{r}
+#should be 0.162
+mse * solve(xTx)
+
+```
+
+### Part vi
+
+```{r}
+
+
+```
+
+# Question 2
+
+```{r}
+dat2 <- read.csv("../HW01Data/BodyTemperature.csv")
+```
+
+### Part a
+
+```{r}
+fit2 <- lm(Temperature ~ HeartRate, data = dat2)
+
+```
+
+### Part b
+
+```{r}
+sum2 <- summary(fit2)
+sum2
+```
+
+The estimate of the slope ($\hat{\beta}_1$) is `r round(fit2$coefficients[2],4)` which means that for a one unit increase in Heart Rate, the average individual's temperature will increase by that much. The p-value is computed to be `r round(sum2$coefficients[2,4], 8)` which means it is statistically significant.
+
+### Part c
+
+```{r}
+conf2 <- confint(fit2)
+conf2[2,]
+```
+
+The above computed 95% confidence interval supports the conclusion we found with the p-value, as 0 is not contained in the interval. We are 95% confident that the true slope lies between those two values.
+
+### Part d
+
+```{r}
+sum2$adj.r.squared
+```
+
+This tells us that the contribution of heart rate to the model explains only 19.23% of the variability in Temperature.
+
+### Part e
+
+```{r}
+preddat <- data.frame(HeartRate = 75)
+predict(fit2, newdata = preddat)
+
+```
+
+### Part f
+
+```{r}
+fit2.1 <- lm(Temperature ~ HeartRate + as.factor(Sex), data = dat2)
+sum2.1 <- summary(fit2.1)
+sum2.1
+```
+
+The investigator is technically correct, yes, because the $R_a^2$ value did increase from `r round(sum2$adj.r.squared, 4)` to `r round(sum2.1$adj.r.squared, 4)`. Though an argument could be made that since the sex variable is not significant at the 0.05 level, it should not be included in the model. 
+
+### Part g
+
+```{r}
+sum2.1
+
+```
+
+The intercept estimate, found to be `r round(sum2.1$coefficients,3)[1,1]` is the predicted temperature of an individual with a heart rate of 0. This is obviously not at all clinically significant, but that is what it means strictly in terms of the model.
+
+The heart rate estimate, computed as `r round(sum2.1$coefficients,3)[2,1]` is the change in average temperature for a 1 unit increase in heart rate, with sex held constant.
+
+The sex estimate, computed as `r round(sum2.1$coefficients,4)[3,1]` is the change in average temperature for a 1 unit change in sex, which in this case means the difference between a male identifying individual and a female identifying individual, with heart rate held constant.
+
+# Question 3
+
+```{r}
+dat3 <- read.csv("../HW01Data/corn_yield_and_rainfall.csv")
+```
+
+### Part a
+
+```{r}
+ggplot(dat3, aes(x = Rainfall, y = Yield))+
+  geom_point()+
+  theme(panel.grid.minor = element_blank())+
+  labs(title = "Scatterplot of Corn Yield and Rainfall",
+       x = "Rainfall (Inches)",
+       y = "Corn Yield (Bushels/Acre)")
+```
+
+### Part b
+
+I would not describe the association between yield and rainfall as linear. It appears that there is a positive association between the two variables until rainfall exceeds approximately 11 inches, where the association seems to switch to a negative one.
+
+### Part c
+
+We can measure the strength of the association by fitting a least-squares regression line to the data and computing an $R^2$ value.
+
+### Part d
+
+```{r}
+fit3 <- lm(Yield ~ Rainfall, data = dat3)
+sum3 <- summary(fit3)
+
+MSE <- mean(fit3$residuals^2)
+RMSE <- sqrt(MSE)
+RMSE
+
+```
+
+The units of the RMSE are in the same units as the original data.
+
+### Part e
+
+```{r}
+predict(fit3, data.frame(Rainfall = 14), interval = "confidence") %>% pander()
+```
+
+This is a confidence interval for the true mean corn yield when rainfall = 14 inches.
+
+### Part f
+
+```{r}
+predict(fit3, data.frame(Rainfall = 14), interval = "prediction") %>% pander()
+```
+
+This is a prediction interval for when the rainfall is 14 inches.
+
+### Part g
+
+Clearly, the prediction interval is wider than is the confidence interval. Logically, this makes sense. A confidence interval is showing a range of values that are associated with a statistic. The prediction interval is actually predicting the value of a single data point.
+
+### Part h
+
+```{r}
+sum3$adj.r.squared
+```
+
+Approximately 13.88% of the variance in yield is explained by this linear regression model.
+
+# Question 4
+
+```{r}
+dat4 <- read.csv("../HW01Data/cricket_data.csv")
+```
+
+### Part a
+
+```{r}
+ggplot(dat4, aes(x, y))+
+  geom_point()+
+  theme(panel.grid.minor = element_blank())+
+  labs(x = "Temperature in Fahrenheit",
+       y = "Chirps per Second",
+       title = "Cricket Chirp Frequency")
+
+```
+
+### Part b
+
+```{r}
+fit4 <- lm(y ~ x, data = dat4)
+sum4 <- summary(fit4)
+```
+
+The parameter estimate for the intercept was computed as `r round(sum4$coefficients[1,1], 4)` which can be interpreted as the average number of chirps per second when the temperature is 0. This does not make much sense, because you cannot have a negative number of chirps in a second, but this is what the intercept estimate means from a statistical standpoint.
+
+The parameter estimate for the slope was computes as `r round(sum4$coefficients[2,1], 4)` which can be interpreted to be the change in average chirps per second with a 1 unit (degree Fahrenheit) increase in temperature.
+
+### Part c
+
+To convert from Fahrenheit to Celsius, you subtract 32 from the Fahrenheit measurement, and then multiply that value by $\frac{5}{9}$. That is, $d_C = \frac{5}{9}(d_F - 32)$. This means that the conversion from Fahrenheit to Celsius is not linear. Because of this, converting from F to C at F = 85 will not have the same unit change when converting from F to C at F = 35.
+
+If we are only curious as to how the parameter estimates would change if we first convert our data to Celsius before we fit the model, then the estimates would in fact change, but our interpretations of those estimates would only change by saying Celsius instead of Fahrenheit. This can be quickly shown here:
+
+```{r}
+dat4c <- dat4 %>% mutate(celsius = (x-32) * (5/9))  
+summary(lm(y ~ celsius, dat4c))
+```
+
+### Part d
+
+
+
 
 
