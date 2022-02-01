@@ -71,6 +71,7 @@ mse * solve(xTx)
 ```
 
 ### Part vi
+__NOT FINISHED__
 
 ```{r}
 
@@ -255,8 +256,42 @@ summary(lm(y ~ celsius, dat4c))
 ```
 
 ### Part d
+__NOT FINISHED__
+
+```{r}
+preds4 <- predict(fit4, newdata = data.frame(x = 80), interval = "confidence")
+
+# 1/ (n-2) * (preds4[1] - )
+# sum4$sigma ^2
+```
+
+### Part e
 
 
+```{r}
+predict(fit4, newdata = data.frame(x = 105), interval = "confidence")
+```
+
+### Part f
+
+```{r}
+sum((fit4$fitted.values - mean(dat4$y))^2)
+```
+
+### Part g
+```{r}
+sum4$r.squared
+```
 
 
+### Part h
 
+```{r}
+plot(fit4, which = 1)
+```
+
+### Part i
+
+```{r}
+plot(fit4, which = 2)
+```
