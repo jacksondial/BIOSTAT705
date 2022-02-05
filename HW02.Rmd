@@ -27,20 +27,143 @@ lm1 <- lm(BP ~ saltLevel, data = dat1)
 
 ```{r}
 sum1 <- summary(lm1)
-beta1 <- round(sum1$coefficients[2,1],3)
-bh1 <- mean((dat1 %>% filter(saltLevel == 1))$BP) - mean((dat1 %>% filter(saltLevel == 0))$BP)
+bh1 <- round(sum1$coefficients[2,1],3)
+bp1_2 <- mean((dat1 %>% filter(saltLevel == 1))$BP) - mean((dat1 %>% filter(saltLevel == 0))$BP)
 ```
 
-Here it is shown that $\hat{\beta}_1 = \overline{BP}_1 - \overline{BP}_2$ as `r beta1` = `r round(bh1,3)`.
+Here it is shown that $\hat{\beta}_1 = \overline{BP}_1 - \overline{BP}_2$ as `r bh1` = `r round(bp1_2,3)`.
 
 ### Part B
 
 ```{r}
+bh0 <- round(sum1$coefficients[1], 3)
+bp2 <- mean((dat1 %>% filter(saltLevel == 0))$BP)
+```
+
+Here it is shown that $\hat{\beta}_0 = \overline{BP}_2$ as `r bh0` = `r bp2`
+
+### Part C
+
+__Not finished__
+
+
+```{r}
+
 
 ```
 
 
+### Part D
 
+__Not finished__
+
+```{r}
+
+
+```
+
+
+# Question 2
+
+```{r}
+wt_med <- median(mtcars$wt)
+mtcars2 <- mtcars %>% 
+  mutate(Xi = case_when(
+    wt > wt_med ~ 1,
+    TRUE ~ 0
+  ))
+#Just to verify it worked correctly
+nrow(mtcars2)
+sum(mtcars2$Xi)
+```
+
+### Part A
+
+```{r}
+lm2 <- lm(mpg ~ Xi, data = mtcars2)
+sum2 <- summary(lm2)
+bh1_2 <- sum2$coefficients[1]
+
+# ggplot(mtcars2, aes(x = as.factor(Xi), y = mpg))+
+#   geom_point()
+```
+
+The interpretation of $\hat{\beta}_1$ is for a 1 unit increase in Xi (Xi here is binary so it is equivalent to saying changing from 0 to 1, or being below the median to above the median) the average mpg of cars in this data set decreases by `r bh1_2`.
+
+### Part B
+
+__Not finished__
+
+```{r}
+x <- model.matrix(lm2)
+x
+#
+dim(x)
+# get the response vector, y
+y=mtcars2[,1]
+y
+# get matrix x transpose x
+xTx <- t(x) %*% x
+```
+
+Below is the design matrix:
+
+```{r}
+xTx
+```
+
+### Part C
+
+```{r}
+lm2_c <- lm(mpg ~ wt, data = mtcars2)
+sum2_c <- summary(lm2_c)
+sum2_c
+```
+
+The results differ greatly in terms of $R^2$ values, both multiple and adjusted. This makes sense because the difference between the two is with the first one we are using a binary variable which was made from the continuous variable that was used in the second model. Whenever we take a continuous variable and make it binary, we lose information about our data, and particularly about our response variable. The second model, that with the continuous variable of weight, is a better model.
+
+### Part D
+
+```{r}
+lm2_d <- lm(mpg ~ Xi * hp, data = mtcars2)
+sum2_d <- summary(lm2_d)
+sum2_d
+```
+
+The estimated model for this regression is as follows:
+
+$$
+\hat{Y_i} =\hat{\beta_0} + \hat{\beta_1}*X_i +\hat{\beta_2}*HP_i + \hat{\beta_3}*X_i*HP_i
+$$
+```{r}
+bh0_2d <- sum2_d$coefficients[1]
+bh1_2d <- sum2_d$coefficients[2]
+bh2_2d <- sum2_d$coefficients[3]
+bh3_2d <- sum2_d$coefficients[4]
+
+ggplot(mtcars2, aes(x = hp, y = mpg))+
+  geom_point(aes(col = as.factor(Xi)))
+```
+
+To interpret the interaction term, which includes a binary variable ($X_i$), we will show the output of the model with each level of the variable.
+
+First, with $X_i = 1$ or in other words, where weight is greater than the median.
+
+$$
+\hat{Y_i} = 31.82 + (-11.48*1) +(-0.0697*HP_i) + (0.0449*1*HP_i)
+$$
+
+And now with $X_i = 0$ or where weight is equal to or less than the median.
+
+$$
+\hat{Y_i} = 31.82 + (-11.48*0) +(-0.0697*HP_i) + (0.0449*0*HP_i)
+$$
+
+We can see here that the interaction term, which is the last term in each of the above expressions, changes the effect of HP on the model. In the first example where $X_i = 1$, we have an increased effect on the predicted mpg value coming from HP. When we set $X_i = 0$ in the second model, that 'extra' effect of HP on mpg is removed. Thus it is shown that the interaction changes how one predictor variable changes the response variable.
+
+### Part D
+
+```{r}
 
 
 
