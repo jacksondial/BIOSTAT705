@@ -14,6 +14,7 @@ knitr::opts_chunk$set(echo = TRUE)
 ```{r}
 #Load libraries
 library(tidyverse)
+library(olsrr)
 ```
 
 # Question 1
@@ -58,7 +59,7 @@ __Not finished__
 __Not finished__
 
 ```{r}
-
+#bp1_2 / (s_p * sqrt())
 
 ```
 
@@ -82,7 +83,7 @@ sum(mtcars2$Xi)
 ```{r}
 lm2 <- lm(mpg ~ Xi, data = mtcars2)
 sum2 <- summary(lm2)
-bh1_2 <- sum2$coefficients[1]
+bh1_2 <- sum2$coefficients[2]
 
 # ggplot(mtcars2, aes(x = as.factor(Xi), y = mpg))+
 #   geom_point()
@@ -161,10 +162,101 @@ $$
 
 We can see here that the interaction term, which is the last term in each of the above expressions, changes the effect of HP on the model. In the first example where $X_i = 1$, we have an increased effect on the predicted mpg value coming from HP. When we set $X_i = 0$ in the second model, that 'extra' effect of HP on mpg is removed. Thus it is shown that the interaction changes how one predictor variable changes the response variable.
 
-### Part D
+This model is _NOT_ additive.
+
+### Part E
 
 ```{r}
+lm2_e <- lm(mpg ~ wt*hp, data = mtcars2)
+sum2_e <- summary(lm2_e)
+sum2_e
+sum2_e_bh3p <- sum2_e$coefficients[4,4]
+```
 
 
+To interpret the interaction term, we will manipulate our mathematical model which is given below:
 
+
+$$
+\hat{Y_i} =\hat{\beta_0} + \hat{\beta_1}*WT_i +\hat{\beta_2}*HP_i + \hat{\beta_3}*WT_i*HP_i
+$$
+
+It can be rearranged algebraically as follows:
+
+
+$$
+\hat{Y_i} =\hat{\beta_0} + (\hat{\beta_2}*HP_i) + [WT_i*(\hat{\beta_1} + \hat{\beta_3}*HP_i)]
+$$
+
+We can see here now that a 1 unit increase in $WT$ will result in an increase of the predicted $Y_i$ or $MPG$ by a factor of $\hat{\beta_1}$, and $\hat{\beta_3} * HP_i$, or by an increase of $-0.1201 + (0.0279*HP_i)$.
+
+Because our interaction term is significant, $ p \approx $ `r round(sum2_e_bh3p,5)`, we cannot interpret the main effects in the model by themselves.
+
+# Question 3
+
+```{r}
+dat3 <- read.table("../HW02Data/HW2-prob3.dat", header = TRUE)
+```
+
+### Part A
+
+```{r}
+lm3 <- lm(y ~ ., data = dat3)
+sum3 <- summary(lm3)
+sum3
+```
+
+The estimator $\hat{\beta_2}$ can be interpreted to be a 1 unit increase in the $X_2$ variable is equivalent to a 8.5013 increase in y.
+
+### Part B
+
+```{r}
+cor(dat3)
+```
+
+According to the correlation matrix, $X_4$ explains the most variability of in y.
+
+### Part C
+
+```{r}
+lms_3c <- ols_step_all_possible(lm3)
+max(lms_3c$adjr)
+min(lms_3c$cp)
+
+lmfits_3c <- ols_step_best_subset(lm3)
+lmfits_3c
+max(lmfits_3c$adjr)
+min(lmfits_3c$cp)
+min(lmfits_3c$aic)
+min(lmfits_3c$sbic)
+```
+
+
+For $R^2_a$, the best model is #4, which includes X1, X2, X3, and X5
+
+For $C_P$, the best model is #3, which includes X1, X2, and X3.
+
+For $AIC_p$, the best model is #3, which includes X1, X2, and X3.
+
+For $BIC_p$, the best model is #3, which includes X1, X2, and X3.
+
+### Part D
+
+The four recommendations above do not all recommend the same subset of variables. This does not always happen, however, as there could just be one model that is much better than all the other possible models.
+
+### Part E
+
+```{r}
+ols_step_backward_p(lm3,prem = 0.1)
+
+ols_step_forward_p(lm3,penter = 0.15)
+
+ols_step_both_p(lm3,pent = 0.15,prem = 0.1)
+```
+
+Using backward selection, our selected model subset is X1, X2, and X3. 
+
+Using forward selection, our selected model subset is X1, X2, X3, and X4.
+
+Using step-wise selection, our selected model subset is is X1, X2, and X3.
 
