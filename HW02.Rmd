@@ -45,23 +45,32 @@ Here it is shown that $\hat{\beta}_0 = \overline{BP}_2$ as `r bh0` = `r bp2`
 
 ### Part C
 
-__Not finished__
-
-
 ```{r}
+n1 <- length((dat1 %>% filter(saltLevel == 1))$BP)
+s1 <- var((dat1 %>% filter(saltLevel == 1))$BP)
+n2 <- length((dat1 %>% filter(saltLevel == 0))$BP)
+s2 <- var((dat1 %>% filter(saltLevel == 0))$BP)
 
+num <- ((n1 - 1))*(s1) + ((n2-1)) * (s2)
+denom <- n1 + n2 - 2
+total <- num/denom
 
+anova1 <- anova(lm1)
+q1c_rightside <- anova1$`Mean Sq`[2]
 ```
 
+Here it is shown that $s^2_{BP.x} = s_p^2$ as `r total` = `r q1c_righstide`.
 
 ### Part D
 
-__Not finished__
-
 ```{r}
-#bp1_2 / (s_p * sqrt())
+s_p <- sqrt(total)
+t_left_side <- sum1$coefficients[2] / sum1$coefficients[4]
 
+t_right_side <- bp1_2 / ( s_p * sqrt( (n1+n2) / (n1*n2) ) )
 ```
+
+It is shown here that `r t_left_side` = `r t_right_side`
 
 
 # Question 2
@@ -93,24 +102,14 @@ The interpretation of $\hat{\beta}_1$ is for a 1 unit increase in Xi (Xi here is
 
 ### Part B
 
-__Not finished__
-
 ```{r}
 x <- model.matrix(lm2)
-x
-#
-dim(x)
-# get the response vector, y
-y=mtcars2[,1]
-y
-# get matrix x transpose x
-xTx <- t(x) %*% x
 ```
 
 Below is the design matrix:
 
 ```{r}
-xTx
+x
 ```
 
 ### Part C
@@ -259,4 +258,3 @@ Using backward selection, our selected model subset is X1, X2, and X3.
 Using forward selection, our selected model subset is X1, X2, X3, and X4.
 
 Using step-wise selection, our selected model subset is is X1, X2, and X3.
-
