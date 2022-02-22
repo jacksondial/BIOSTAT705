@@ -1,0 +1,113 @@
+---
+title: "HW03"
+author: "Jackson Dial"
+date: "2/15/2022"
+output: word_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(olsrr)
+#library(leaps) #does everything but AIC... leaps is actually loaded when you load bestglm
+library(bestglm) #does AIC
+library(qpcR) #does PRESS
+library(dummies)
+```
+
+```{r}
+dat <- read_csv("../HW03Data/Hitters.csv")
+```
+
+# Question 1
+
+### Part a
+
+```{r}
+#fit1 <- lm(log(Salary) ~ ., data = dat)
+reg_sum <- summary(regsubsets(log(Salary) ~ ., data = dat, nvmax = NULL))
+
+plot(reg_sum$adjr2)
+adjr2_dp <- which.max(reg_sum$adjr2)
+points(adjr2_dp, reg_sum$adjr2[adjr2_dp], col =" red",cex =2, pch =20)
+
+plot(reg_sum$cp)
+cp_dp <- which.min(reg_sum$cp)
+points(cp_dp, reg_sum$cp[cp_dp], col =" red",cex =2, pch =20)
+
+plot(reg_sum$bic)
+bic_dp <- which.min(reg_sum$bic)
+points(bic_dp, reg_sum$bic[bic_dp], col =" red",cex =2, pch =20)
+
+
+
+#the bestglm() function requires only numeric of factor vars so I will convert the 2 char vars to factor here:
+dat$League <- as.factor(dat$League)
+dat$Division <- as.factor(dat$Division)
+
+# bestglm also cant take NA values, so we will look at them here:
+sum(is.na(dat))
+sum(is.na(dat$Salary)) #Looks like all of the NA values are in Salary, and since that is our Y value, they may as well be removed because they cannot be used in a regression with a blank Y value without imputation, which we will not attempt here.
+
+dat2 <- dat[complete.cases(dat),]
+
+nrow(dat) - nrow(dat2) #make sure this matches the sum above which it does, YAY!
+```
+
+
+```{r}
+League <- dummy(dat2$League)[,c(1)] # only 1 dummy variable is needed for 2 levels
+Division <- dummy(dat2$Division)[,c(1)]
+Hitters_bestglm <- dat2
+Hitters_bestglm$League <- League
+Hitters_bestglm$Division <- Division
+###AIC from bestglm
+## Rename the response to y
+Hitters_bestglm <- within(Hitters_bestglm, {
+  y<-log(Salary)
+  Salary <- NULL})
+
+Hitters_bestglm <- as.data.frame(Hitters_bestglm)
+
+# best subsets
+#AIC
+subsets2 <- bestglm(Xy=Hitters_bestglm, family = gaussian, IC="AIC")
+summary(subsets2)
+
+AIC_dat <- subsets2$Subsets
+AIC_dat2 <- data.frame(p=0:18, AIC=AIC_dat$AIC)
+aic_dp <- which.min(AIC_dat2$AIC)
+plot(AIC_dat2)
+points(aic_dp, AIC_dat2$AIC[aic_dp], col =" red",cex =2, pch =20)
+```
+
+
+### Part b
+
+The 4 criteria do not match, and the total number of possible subset is 2^18 or 262,144 total possible subsets.
+
+### Part c
+
+```{r}
+ols_step_forward_p(fit1, penter = .05)
+ols_step_backward_p(fit1, prem = .05)
+ols_step_both_p(fit1, pent = .05, prem = .05)
+```
+
+
+
+### Part d
+
+```{r}
+
+```
+
+
+
+
+
