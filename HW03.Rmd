@@ -18,6 +18,7 @@ library(olsrr)
 library(bestglm) #does AIC
 library(qpcR) #does PRESS
 library(dummies)
+library(glmnet)
 ```
 
 ```{r}
@@ -103,11 +104,110 @@ ols_step_both_p(fit1, pent = .05, prem = .05)
 
 ### Part d
 
-```{r}
+__RIDGE Regression__
 
+```{r}
+x = model.matrix(log(Salary)~.-1,data = dat2)
+y = log(dat2$Salary)
+fit.ridge=glmnet(x,y,alpha=0)
+
+### plot log(lambda) vs. the regression coefficient
+plot(fit.ridge,xvar="lambda",label=T)
+
+### plot of fraction of deviance explained, similar to R-squares
+plot(fit.ridge,xvar="dev",label=T)
+
+### glmnet also does the cross-validation (cv)
+cv.ridge=cv.glmnet(x,y,alpha=0)
+plot(cv.ridge)
+coef(cv.ridge)
 ```
 
 
+__LASSO Regression__
+
+```{r}
+### alpha=1 (LASSO regression) is the default in glmnet
+fit.lasso=glmnet(x,y,alpha=1) 
+### plot log(lambda) vs. the regression coefficient
+plot(fit.lasso,xvar="lambda",label=T)
+### plot of fraction of deviance explained, similar to R-squared
+plot(fit.lasso,xvar="dev",label=T)
+### glmnet also does the cross-validation (cv)
+cv.lasso=cv.glmnet(x,y,alpha=1, nfolds = 10)
+plot(cv.lasso)
+coef(cv.lasso)
+
+```
+
+Most of the coefficients are not similar between the ridge model and the lasso model. It is important to consider that lasso allows the parameters to be shrunk to 0 while ridge does not. In this case, I would select the LASSO model because it does allow for subset selection, and a lot of the coefficients that are included in the ridge model are nearly 0 but are not allowed to be shrunk all the way to 0, essentially adding complexity and nothing more.
+
+### Part e
+
+```{r}
+set.seed(11)
+train=sample(seq(263),175,replace=FALSE)
+lasso.tr=glmnet(x[train,],y[train])
+
+pred=predict(lasso.tr,x[-train,])
+rmse=sqrt(apply((y[-train]-pred)^2,2,mean))
+
+lam.best=lasso.tr$lambda[order(rmse)[1]]
+lam.best
+lambda.min <- lasso.tr$lambda[which.min(rmse)]
+lambda.min
+coef(lasso.tr,s=lam.best)
+```
+
+The model selected here is different from the model selected by lasso in part d.I would select the model that is presented here, because the smallest lambda value in this model is smaller than the smallest lambda in the model in part d.
+
+# Question 2
+
+```{r}
+corn <- read_csv("../HW03Data/corn_yield_and_rainfall.csv")
+```
+
+### Part a
+
+```{r}
+fit1 <- lm(Yield ~ Rainfall + I(Rainfall^2), data = corn)
+summary(fit1)
+
+plot(fit1, which = 1:2)
+```
+
+Based off of the model diagnostic plots, I am not worried about the fit of our model to the data. Though the QQ-plot does show a bit of a tail, it is not enough to cause concern. This model is also an improvement over just simple regression, as the squared term is significant and the $R^2_a$ value also increases from the simple model to the squared model.
+
+### Part b
+
+```{r}
+plot(fit1$residuals ~ corn$Year)
+```
+ 
+There does _not_ appear to be any  pattern in this plot.
+
+### Part c
+
+Regardless of my opinion on part b, I will fit a model with year included.
+
+```{r}
+fit2c <- lm(Yield ~ Rainfall + I(Rainfall^2) + Year, data = corn)
+summary(fit2c)
+```
+
+It is good that I did so because it does appear that year adds predictive insight to our model as it is significant and increases our $R_a^2$ value.
+
+An interpretation of the estimated coefficient for year is that for a 1 unit increase in year corresponds to a 0.13634 unit increase in average corn yield, all other variables held constant.
+
+### Part d
 
 
+### Part e
 
+
+### Part f
+
+```{r}
+fit2f <- lm(Yield ~ Rainfall*Year + I(Rainfall^2), data = corn)
+summary(fit2f)
+```
