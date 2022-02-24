@@ -7,7 +7,7 @@ editor_options:
   chunk_output_type: console
 ---
 
-```{r setup, include=FALSE}
+```{r setup, include=FALSE, warning=FALSE, message=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
@@ -19,6 +19,7 @@ library(bestglm) #does AIC
 library(qpcR) #does PRESS
 library(dummies)
 library(glmnet)
+library(car)
 ```
 
 ```{r}
@@ -95,12 +96,13 @@ The 4 criteria do not match, and the total number of possible subset is 2^18 or 
 ### Part c
 
 ```{r}
+fit1 <- lm(log(Salary) ~ ., data = dat)
 ols_step_forward_p(fit1, penter = .05)
 ols_step_backward_p(fit1, prem = .05)
 ols_step_both_p(fit1, pent = .05, prem = .05)
 ```
 
-
+All of these procedures select the same subset of variables, YAY! That means that this really is the best subset, given our toolkit of model selection.
 
 ### Part d
 
@@ -137,7 +139,7 @@ plot(fit.lasso,xvar="dev",label=T)
 cv.lasso=cv.glmnet(x,y,alpha=1, nfolds = 10)
 plot(cv.lasso)
 coef(cv.lasso)
-
+cv.lasso$lambda.min
 ```
 
 Most of the coefficients are not similar between the ridge model and the lasso model. It is important to consider that lasso allows the parameters to be shrunk to 0 while ridge does not. In this case, I would select the LASSO model because it does allow for subset selection, and a lot of the coefficients that are included in the ridge model are nearly 0 but are not allowed to be shrunk all the way to 0, essentially adding complexity and nothing more.
@@ -201,9 +203,30 @@ An interpretation of the estimated coefficient for year is that for a 1 unit inc
 
 ### Part d
 
+```{r}
+vif(fit2c)
+```
+
+There is multicollinearity, and it is structural because I added in the rainfall^2 term myself.
 
 ### Part e
 
+```{r}
+dffits <- as.data.frame(dffits(fit2c))
+
+infl <- filter(dffits, abs(dffits) > 1)
+
+infl
+
+corn_rfsq <- corn %>% 
+  mutate(rfsq = Rainfall^2)
+cor(corn_rfsq[, c(1, 3, 4)])
+
+ols_plot_dffits(fit2c)
+ols_plot_cooksd_chart(fit2c)
+```
+
+There does appear to high multicollinearity between the rainfall squared and the rainfall variables because of the values computed in the correlation matrix.
 
 ### Part f
 
@@ -211,3 +234,19 @@ An interpretation of the estimated coefficient for year is that for a 1 unit inc
 fit2f <- lm(Yield ~ Rainfall*Year + I(Rainfall^2), data = corn)
 summary(fit2f)
 ```
+
+The interaction term is significant, while all of the original effects also remain significant, indicating that we should include this in our model.
+
+The interaction in our model can be interpreted by using the mathematical model below:
+
+$$
+\hat{Y_i} = \beta_0 + \beta_1* RF + \beta_2*YR + \beta_3*RF^2 + \beta_4*RF*YR
+$$
+
+Which can be manipulated to be:
+
+$$
+\hat{Y_i} = \beta_0 + \beta_1* RF + \beta_3*RF^2 + YR(\beta_4*RF+\beta_2)
+$$
+
+Which shows that for a one year increase in year, our predicted $\hat{Y_i}$ value increase by a factor of $\beta_4 * RF + \beta_2$ where $\hat{\beta_2} = 1.001$ and $\hat{\beta_4} = -0.08064$.
