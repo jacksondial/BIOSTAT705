@@ -1,0 +1,28 @@
+---
+title: "Homework4"
+author: "Jackson Dial"
+date: "3/15/2022"
+output: word_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+#libraries
+
+```
+
+```{r}
+#read in data
+
+```
+
+# Question 1
+
+### Part A
+
+$$
+Y_{ij} = \beta_0 + \beta_1 D_{ij} + \beta_2D_{2j} + \epsilon_{ij} \text{ where } i = 1, 2, 3; \text{ and } j = 1,2,...,n_i
+$$
