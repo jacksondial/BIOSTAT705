@@ -3,26 +3,196 @@ title: "Homework4"
 author: "Jackson Dial"
 date: "3/15/2022"
 output: word_document
+editor_options: 
+  chunk_output_type: console
 ---
 
-```{r setup, include=FALSE}
+```{r setup, include=FALSE, message=FALSE, warning=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
 ```{r}
 #libraries
-
-```
-
-```{r}
-#read in data
-
+library(tidyverse)
 ```
 
 # Question 1
 
+![Question 1](../HW04_pics/IMG_3397.jpg)
+
+# Question 2
+
+![Question 2](../HW04_pics/IMG_3398.jpg)
+
+
+```{r}
+x1 <- c(1,0,0)
+x2 <- c(0,1,0)
+x3 <- c(0,0,1)
+
+x1full <- matrix(c(1,0,0,1,0,0,1,0,0,1,0,0,1,0,0,1,0,0,1,0,0,1,0,0,1,0,0,1,0,0), nrow = 10, byrow = TRUE)
+x2full <- matrix(c(0,1,0,0,1,0,0,1,0,0,1,0,0,1,0,0,1,0,0,1,0,0,1,0,0,1,0,0,1,0), nrow = 10, byrow = TRUE)
+x3full <- matrix(c(0,0,1,0,0,1,0,0,1,0,0,1,0,0,1,0,0,1,0,0,1,0,0,1,0,0,1,0,0,1), nrow = 10, byrow = TRUE)
+x <- rbind(x1full, x2full, x3full)
+x
+
+t(x)
+t(x)%*%x
+solve(t(x)%*%x)
+solve(t(x)%*%x)%*%t(x)
+
+```
+
+
+# Question 3
+
+```{r}
+dat3 <- read.table("../HW04Data/prob3.dat", header = TRUE)
+```
+
 ### Part A
 
+__Check assumptions__
+
+1) Is age correlated with days
+
+```{r}
+ggplot(dat3, aes(x = age, y = days))+
+  geom_point()+
+  theme(panel.grid.minor = element_blank())+
+  labs(title = "Days appears to be correlated with age")
+
+```
+
+2) Is status not correlated with age
+
+```{r}
+ggplot(dat3, aes(as.factor(status), age))+
+  geom_boxplot()
+```
+
+There does appear to be a bit of association between status as a factor and age, but for the purpose of this model we will assume that there is no correlation between status and age.
+
+3) The beta null hypothesis
+
 $$
-Y_{ij} = \beta_0 + \beta_1 D_{ij} + \beta_2D_{2j} + \epsilon_{ij} \text{ where } i = 1, 2, 3; \text{ and } j = 1,2,...,n_i
+\beta_{\text{below average}}=\beta_{\text{average}} = \beta_{\text{above average}} = \beta \text{ (common slope)}
 $$
+
+To check the homogeneity of the regression slopes
+
+```{r}
+dat3$status <- as.factor(dat3$status)
+library(ggpubr)
+ggscatter(
+  dat3, x = "age", y = "days",
+  color = "status", add = "reg.line", cor.method = "pearson"
+)+
+  stat_regline_equation(
+    aes(label = paste(..eq.label.., ..rr.label.., sep = "~~~~"), color = status)
+  )+
+  ggtitle("Linearity Assumptions of Recovery Days", subtitle = "Considering Patient Fitness Status & Age")+
+  theme(legend.position = "right")
+
+```
+
+This plot shows there is approximately equal slopes, which is good for our assumptions.
+
+$$
+H_o: \mu_{1} = \mu_{2} = \mu_{3}
+$$
+
+$$
+H_a: \text{ Not all slopes are equal}
+$$
+
+OR
+
+$$
+H_o:\text{There is no relationship between exercise status and days to recovery, after adjustment for age}
+$$
+
+$$
+H_a:\text{There is a relationship between exercise status and days to recovery, after adjustment for age}
+$$
+
+```{r}
+options(contrasts=c("contr.sum","contr.poly"))
+fit = aov(lm(days ~ (as.factor(status) + age)^2, data = dat3))
+summary(fit)
+```
+
+Because the interaction term is not significant, we will remove it from the model:
+
+```{r}
+options(contrasts=c("contr.sum","contr.poly"))
+fit1 = aov(lm(days ~ (as.factor(status) + age), data = dat3))
+summary(fit1)
+
+#Type III
+library(car)
+Anova(fit1, type = "III")
+```
+
+After adjustment for age, there is a statistically significant difference in days to recovery between fitness levels (status).
+
+#### Test Statistic and p-value
+
+$$
+F(2,20) = 399.114;\space p < 0.0001
+$$
+
+```{r}
+1-pf(399.114, 2,21)
+```
+
+
+### Part B
+
+```{r}
+coef(fit1)
+```
+
+
+$$
+Y_{1j} = 3.908264 + 3.523424*\text{status 1} + 1.167286*\text{age}
+$$
+
+$$
+Y_{2j} = 3.908264 + 1.676045*\text{status 2} + 1.167286*\text{age}
+$$
+
+
+
+
+### Part C
+
+```{r}
+summary(lm(days ~ age, data = dat3))
+```
+
+The estimate for the slope is smaller in the part c than in part b.
+
+### Part D
+
+```{r}
+library(emmeans)
+library(rstatix)
+
+adj_means <- emmeans_test(data = dat3, formula = days ~ status, covariate = age)
+get_emmeans(adj_means)
+```
+
+The group that appears to be driving the global signal from fitness level is status level 3, because the mean days for that group is much lower for that group.
+
+### Part E
+
+```{r}
+summary(lm(days ~ as.factor(status) + age, data = dat3))
+```
+
+It again appears to be group 3 that is driving the global signal from fitness level, because status 1 is the baseline, and status 2 is an approximate 1.85 decrease in effect, and status 3 is a much larger 8.72 decrease.
+
+### Part F
+
+I do not believe that including patient age in this model was helpful, because we could see the effect of status on days without the adjustment for age.
